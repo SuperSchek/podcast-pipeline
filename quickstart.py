@@ -1,7 +1,7 @@
+
 from __future__ import print_function
 import httplib2
 import os
-import io
 
 from apiclient import discovery
 from oauth2client import client
@@ -18,7 +18,7 @@ except ImportError:
 # at ~/.credentials/drive-python-quickstart.json
 SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
 CLIENT_SECRET_FILE = 'client_secret.json'
-APPLICATION_NAME = 'Filmerds Podcast Pipeline'
+APPLICATION_NAME = 'Drive API Python Quickstart'
 
 
 def get_credentials():
@@ -50,44 +50,24 @@ def get_credentials():
     return credentials
 
 def main():
+    """Shows basic usage of the Google Drive API.
+
+    Creates a Google Drive API service object and outputs the names and IDs
+    for up to 10 files.
+    """
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('drive', 'v3', http=http)
-    download(service)
-    # checkFolder()
-    # downloadPodcasts()
 
-
-def download(service):
     results = service.files().list(
-        pageSize=3,fields="nextPageToken, files(id, name)").execute()
+        pageSize=10,fields="nextPageToken, files(id, name)").execute()
     items = results.get('files', [])
-
     if not items:
         print('No files found.')
     else:
-        print('Found podcasts, starting download.')
+        print('Files:')
         for item in items:
-            print('Downloading', item.get('name'))
-            file_id = item.get('id')
-            request = service.files().get_media(fileId=file_id)
-            fh = io.FileIO(item.get('name'), 'wb')
+            print('{0} ({1})'.format(item['name'], item['id']))
 
-main()
-
-import boto3
-import secrets
-
-s3 = boto3.client(
-    's3',
-    aws_access_key_id=secrets.AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=secrets.AWS_SECRET_ACCESS_KEY
-)
-
-# with open('pic.png', 'rb') as data:
-#     s3.upload_fileobj(data, 'filmerds-podcast-wp', 'wp-content/picture.png', ExtraArgs={'ACL': 'public-read'})
-
-# from pydub import AudioSegment
-#
-# podcast = AudioSegment.from_file("podcast.mp3", "mp3")
-# podcast.export("podcast_converted.mp3", format="mp3", bitrate="128k")
+if __name__ == '__main__':
+    main()
