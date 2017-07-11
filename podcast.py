@@ -87,7 +87,7 @@ s3 = boto3.client(
 # with open('pic.png', 'rb') as data:
 #     s3.upload_fileobj(data, 'filmerds-podcast-wp', 'wp-content/picture.png', ExtraArgs={'ACL': 'public-read'})
 
-# from pydub import AudioSegment
-#
+from pydub import AudioSegment
+
 # podcast = AudioSegment.from_file("podcast.mp3", "mp3")
 # podcast.export("podcast_converted.mp3", format="mp3", bitrate="128k")

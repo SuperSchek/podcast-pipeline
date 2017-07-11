@@ -1,0 +1,4 @@
+google_api_python_client==1.6.2
+boto3==1.4.4
+httplib2==0.10.3
+pydub==0.19.0
