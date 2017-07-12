@@ -5,6 +5,7 @@ import os
 import io
 from apiclient import errors
 from apiclient import discovery
+from googleapiclient.http import MediaIoBaseDownload
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
@@ -25,7 +26,7 @@ from pydub import AudioSegment
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/drive-python-quickstart.json
-SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
+SCOPES = 'https://www.googleapis.com/auth/drive.readonly'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = secrets.APPLICATION_NAME
 
@@ -62,20 +63,18 @@ def main():
     check_watchfolder(service)
 
 
-def download(service):
-    results = service.files().list(
-        pageSize=3,fields="nextPageToken, files(id, name)").execute()
-    items = results.get('files', [])
-
-    if not items:
-        print('No files found.')
-    else:
-        print('Found podcasts, starting download.')
-        for item in items:
-            print('Downloading', item.get('name'))
-            file_id = item.get('id')
-            request = service.files().get_media(fileId=file_id)
-            fh = io.FileIO(item.get('name'), 'wb')
+def download(service, response):
+    for file in response.get('files', []):
+        print('Downloading', file.get('name'))
+        file_id = file.get('id')
+        request = service.files().get_media(fileId=file_id)
+        fh = io.FileIO(file.get('name'), 'wb')
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while done is False:
+            status, done = downloader.next_chunk()
+            print ("Download %d%%." % int(status.progress() * 100))
+        convert_files(file.get('name'))
 
 def check_watchfolder(service):
     page_token = None
@@ -86,10 +85,30 @@ def check_watchfolder(service):
                                         pageToken=page_token).execute()
         for file in response.get('files', []):
             # Process change
-            print ('Found file: %s (%s)' % (file.get('name'), file.get('id')))
+            print ('Found file: %s' % (file.get('name')))
         page_token = response.get('nextPageToken', None)
         if page_token is None:
+            input_continue = raw_input("Download, convert and publish these files? (y/n): ")
+            if input_continue is 'y':
+                print('On it!')
+                download(service, response)
+            elif input_continue is 'n':
+                print('Okay, doing nothing!')
+                break;
+            else:
+                print('Please enter y for yes or n for no:')
             break;
+
+def convert_files(filename):
+    file_name, file_extension = os.path.splitext(filename)
+    if file_extension == ".mp3":
+        podcast = AudioSegment.from_file(filename, "mp3")
+        input_mp3convert = raw_input("Geef de titel van deze file: " + filename)
+        if input_mp3convert:
+            podcast.export((input_mp3convert + ".mp3"), format="mp3", bitrate="128k")
+
+
+    # print('Converting %s which is a %s file.' % (filename, file_extension))
 
 main()
 
@@ -101,7 +120,3 @@ s3 = boto3.client(
 
 # with open('pic.png', 'rb') as data:
 #     s3.upload_fileobj(data, 'filmerds-podcast-wp', 'wp-content/picture.png', ExtraArgs={'ACL': 'public-read'})
-
-
-# podcast = AudioSegment.from_file("podcast.mp3", "mp3")
-# podcast.export("podcast_converted.mp3", format="mp3", bitrate="128k")
