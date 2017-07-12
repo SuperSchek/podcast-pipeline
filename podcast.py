@@ -30,6 +30,12 @@ SCOPES = 'https://www.googleapis.com/auth/drive.readonly'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = secrets.APPLICATION_NAME
 
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=secrets.AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=secrets.AWS_SECRET_ACCESS_KEY
+)
+
 def get_credentials():
     """
     Gets valid user credentials from storage.
@@ -104,19 +110,18 @@ def convert_files(filename):
     if file_extension == ".mp3":
         podcast = AudioSegment.from_file(filename, "mp3")
         input_mp3convert = raw_input("Geef de titel van deze file: " + filename)
+        converted_podcast = (input_mp3convert + ".mp3")
         if input_mp3convert:
-            podcast.export((input_mp3convert + ".mp3"), format="mp3", bitrate="128k")
+            podcast.export(converted_podcast, format="mp3", bitrate="128k")
+        upload_to_s3(converted_podcast)
+
+def upload_to_s3(file_to_upload):
+    print("Uploading " + file_to_upload + " to the Filmerds S3 Bucket!")
+    with open(file_to_upload, 'rb') as data:
+        s3.upload_fileobj(data, 'filmerds-podcast-wp', 'wp-content/2017/ %s' % file_to_upload, ExtraArgs={'ACL': 'public-read'})
+    print(file_to_upload + " was uploaded to S3!")
 
 
     # print('Converting %s which is a %s file.' % (filename, file_extension))
 
 main()
-
-s3 = boto3.client(
-    's3',
-    aws_access_key_id=secrets.AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=secrets.AWS_SECRET_ACCESS_KEY
-)
-
-# with open('pic.png', 'rb') as data:
-#     s3.upload_fileobj(data, 'filmerds-podcast-wp', 'wp-content/picture.png', ExtraArgs={'ACL': 'public-read'})
