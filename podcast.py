@@ -92,8 +92,7 @@ def check_watchfolder(service):
             podcasts_drive.append(name)
         page_token = response.get('nextPageToken', None)
         if page_token is None:
-            print ("I found the following files:")
-            print ('******************************')
+            print ("Welcome to the Python Podcast Pipeline! I found the following files in your watchfolder on Google Drive:")
             print ('\n'.join(map(str, podcasts_drive)))
             print ('******************************')
             confirmation(service, response, (file.get('name')))
@@ -102,6 +101,7 @@ def check_watchfolder(service):
 def confirmation(service, response, filename):
     input_continue = raw_input("Proceed? (y/n): ")
     if input_continue is 'y':
+        print ('\n')
         feed_info(filename)
         download_files(service, response)
     elif input_continue is 'n':
@@ -131,6 +131,8 @@ def feed_info(filename):
         ## Check of the description contains a key which we can then use to set a hyperlink to out file for S3
         check_for_keywords(podcast, podcast_description)
 
+        print ('\n')
+
 def check_for_keywords(podcast, description):
     if "bespreken" in description:
         podcasts_global[podcast].append('bespreken')
@@ -142,18 +144,18 @@ def check_for_keywords(podcast, description):
     podcasts_global[podcast].append(description)
 
 def download_files(service, response):
-    # for file in response.get('files', []):
-    #     print('Downloading', file.get('name'))
-    #     file_id = file.get('id')
-    #     request = service.files().get_media(fileId=file_id)
-    #     fh = io.FileIO(file.get('name'), 'wb')
-    #     downloader = MediaIoBaseDownload(fh, request)
-    #     done = False
-    #     while done is False:
-    #         status, done = downloader.next_chunk()
-    #         print ("Download %d%%." % int(status.progress() * 100))
-    #     new_name = (file.get('name')).replace(" ", "_")
-    #     os.rename((file.get('name')), new_name)
+    for file in response.get('files', []):
+        print('Downloading', file.get('name'), 'from Google Drive. This can take a while...')
+        file_id = file.get('id')
+        request = service.files().get_media(fileId=file_id)
+        fh = io.FileIO(file.get('name'), 'wb')
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while done is False:
+            status, done = downloader.next_chunk()
+            print ("Download %d%%." % int(status.progress() * 100))
+        new_name = (file.get('name')).replace(" ", "_")
+        os.rename((file.get('name')), new_name)
     for podcast in podcasts_drive:
         check_extension(podcast)
 
@@ -174,24 +176,14 @@ def convert_file(filename, extension):
     podcast.export(converted_podcast, format="mp3", bitrate="128k")
     podcasts_converted.append(converted_podcast)
     os.remove(filename)
-    # upload_to_s3(converted_podcast)
-
-# def convert_files(filename, extension):
-#     file_name, file_extension = os.path.splitext(filename)
-#     if file_extension == ".mp3":
-#         podcast = AudioSegment.from_file(filename, "mp3")
-#         input_mp3convert = raw_input("Geef de titel van deze file: " + filename)
-#         converted_podcast = (input_mp3convert + ".mp3")
-#         if input_mp3convert:
-#             podcast.export(converted_podcast, format="mp3", bitrate="128k")
-#         upload_to_s3(converted_podcast)
+    upload_to_s3(converted_podcast)
+    os.remove(converted_podcast)
 
 def upload_to_s3(file_to_upload):
-    print("Uploading " + file_to_upload + " to the Filmerds S3 Bucket!")
+    print("Uploading " + file_to_upload + " to the " + secrets.AWS_S3_BUCKET + " bucket on Amazon S3!")
     with open(file_to_upload, 'rb') as data:
-        s3.upload_fileobj(data, 'filmerds-podcast-wp', 'wp-content/2017/ %s' % file_to_upload, ExtraArgs={'ACL': 'public-read'})
-    print(file_to_upload + " was uploaded to S3!")
-
+        s3.upload_fileobj(data, secrets.AWS_S3_BUCKET, 'wp-content/2017/ %s' % ("001_TEST_" + file_to_upload), ExtraArgs={'ACL': 'public-read'})
+    print(file_to_upload + " was uploaded to " + secrets.AWS_S3_BUCKET + " on S3!\n")
 
     # print('Converting %s which is a %s file.' % (filename, file_extension))
 
