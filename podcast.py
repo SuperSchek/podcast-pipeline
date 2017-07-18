@@ -1,9 +1,12 @@
 #### DATA LEGEND
-# 1. podcast_filename
-# 2. podcast_title
+# 0. podcast_filename
+# 1. podcast_title
+# 2. categorie
 # 3. keyword
 # 4. description
 # 5. podcast_s3_url
+# 6. publication_date
+# 7. Formatted content
 
 ## Drive REST API imports
 from __future__ import print_function
@@ -30,6 +33,10 @@ import boto3
 
 ## PyDub imports (for audio conversion)
 from pydub import AudioSegment
+
+## Imports needed to generate Wordpress posts
+import datetime
+import requests
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/drive-python-quickstart.json
@@ -125,6 +132,8 @@ def feed_info(filename):
         podcast_title = podcast_type + " | " + podcast_title
         podcasts_global[podcast].append(podcast_title)
 
+        podcasts_global[podcast].append(podcast_type)
+
         ## Get all the info for the episode description
         podcast_description = raw_input("Episode description: ")
 
@@ -136,11 +145,17 @@ def feed_info(filename):
 def check_for_keywords(podcast, description):
     if "bespreken" in description:
         podcasts_global[podcast].append('bespreken')
+        print('Key word set to "bespreken".')
     elif "aflevering" in description:
         podcasts_global[podcast].append('aflevering')
+        print('Key word set to "aflevering".')
+    elif "vertellen" in description:
+        podcasts_global[podcast].append('vertellen')
+        print('Key word set to "vertellen".')
     else:
         keyword = raw_input("No keywords were found in this description. Please enter the you would like to use for the hyperlink to the audiofile on Amazon S3: ")
         podcasts_global[podcast].append(keyword)
+        print('Key word set to "%s".' % keyword)
     podcasts_global[podcast].append(description)
 
 def download_files(service, response):
@@ -176,15 +191,78 @@ def convert_file(filename, extension):
     podcast.export(converted_podcast, format="mp3", bitrate="128k")
     podcasts_converted.append(converted_podcast)
     os.remove(filename)
-    upload_to_s3(converted_podcast)
+    upload_to_s3(converted_podcast, filename)
     os.remove(converted_podcast)
 
-def upload_to_s3(file_to_upload):
-    print("Uploading " + file_to_upload + " to the " + secrets.AWS_S3_BUCKET + " bucket on Amazon S3!")
+def upload_to_s3(file_to_upload, oldfile):
+    year = datetime.datetime.now().year
+    print("Uploading %s to %s/wp-content/%s/ on Amazon S3!" % (file_to_upload, secrets.AWS_S3_BUCKET, year))
     with open(file_to_upload, 'rb') as data:
-        s3.upload_fileobj(data, secrets.AWS_S3_BUCKET, 'wp-content/2017/ %s' % ("001_TEST_" + file_to_upload), ExtraArgs={'ACL': 'public-read'})
-    print(file_to_upload + " was uploaded to " + secrets.AWS_S3_BUCKET + " on S3!\n")
+        s3.upload_fileobj(data, secrets.AWS_S3_BUCKET, 'wp-content/%s/%s' % (year, file_to_upload), ExtraArgs={'ACL': 'public-read'})
+    s3_upload_url = "%s/%s/wp-content/%s/%s" % (secrets.AWS_S3_URL, secrets.AWS_S3_BUCKET, year, file_to_upload)
+    podcasts_global[oldfile].append(s3_upload_url)
+    print(file_to_upload + " was uploaded to " + s3_upload_url + "\n")
+    create_wp_post(oldfile)
 
-    # print('Converting %s which is a %s file.' % (filename, file_extension))
+def create_wp_post(podcast):
+    calculate_publicationdate(podcast)
+    jsonData = {
+        "title": podcasts_global[podcast][1],
+        "status": "future",
+        "date": podcasts_global[podcast][6],
+        "content": format_content(podcast),
+        "tags": [3],
+        "categories": [set_category(podcast)]
+    }
+    r = requests.post(secrets.WP_URL, auth=(secrets.WP_USERNAME, secrets.WP_PASSWORD), json=jsonData)
+    print(r)
+
+def format_content(podcast):
+    description = podcasts_global[podcast][4]
+    keyword_url = "<a href='%s'>%s</a>" % (podcasts_global[podcast][5], podcasts_global[podcast][3])
+    formatted_content = description.replace(podcasts_global[podcast][3], keyword_url)
+    return formatted_content
+
+def set_category(podcast):
+    if "Review" in podcasts_global[podcast][2]:
+        return 5
+    if "Discussie" in podcasts_global[podcast][2]:
+        return 2
+    elif "Filmdomein" in podcasts_global[podcast][1]:
+        return 11
+    elif "Het oeuvre van" in podcasts_global[podcast][1]:
+        return 21
+    else:
+        return 5
+
+def calculate_publicationdate(podcast):
+    now = datetime.datetime.now()
+    if now.weekday() is 2:
+        pub_date = "%s-%s-%sT%s+00:00" % (now.year, now.strftime('%m'), now.strftime('%d'), get_publicationtime(podcast))
+        print('today is Wednesday. Publishing today')
+    elif now.weekday() is 6:
+        pub_date = "%s-%s-%sT%s+00:00" % (now.year, now.strftime('%m'), now.strftime('%d'), get_publicationtime(podcast))
+        print('today is Saturday. Publishing today')
+    elif now.weekday() < 2:
+        n = next_weekday(now, 2)
+        pub_date = "%s-%s-%sT%s+00:00" % (n.year, n.strftime('%m'), n.strftime('%d'), get_publicationtime(podcast))
+        print('Today is %s. Publishing next Wednesday: %s' % (now.weekday(), n))
+    elif now.weekday() > 2:
+        n = next_weekday(now, 6)
+        pub_date = "%s-%s-%sT%s+00:00" % (n.year, n.strftime('%m'), n.strftime('%d'), get_publicationtime(podcast))
+        print('Today is %s. Publishing next Saturday: %s' % (now.weekday(), n))
+    podcasts_global[podcast].append(pub_date)
+
+def get_publicationtime(podcast):
+    if "Discussie" in podcasts_global[podcast][1]:
+        return "10:00:00"
+    else:
+        return "09:00:00"
+
+def next_weekday(d, weekday):
+    days_ahead = weekday - d.weekday()
+    if days_ahead <= 0:
+        days_ahead += 7
+    return d + datetime.timedelta(days_ahead)
 
 main()

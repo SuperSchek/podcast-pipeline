@@ -9,3 +9,9 @@ DRIVE_WATCHFOLDER_ID='yourDriveFolderId'
 AWS_ACCESS_KEY_ID='yourAwsAccessKeyId'
 AWS_SECRET_ACCESS_KEY='yourAwsSecretAccessKey'
 AWS_S3_BUCKET='yourS3BucketName'
+AWS_S3_URL='yourS3Url'
+
+## Wordpress
+WP_URL='yourWordpressUrl'
+WP_USERNAME='yourWordpressUsername'
+WP_PASSWORD='yourWordpressPassword'
