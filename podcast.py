@@ -170,7 +170,7 @@ def download_files(service, response):
             status, done = downloader.next_chunk()
             print ("Download %d%%." % int(status.progress() * 100))
         new_name = (file.get('name')).replace(" ", "_")
-        os.rename((file.get('name')), new_name)
+        os.rename((file.get('name12 new_name)
     for podcast in podcasts_drive:
         check_extension(podcast)
 
@@ -224,32 +224,51 @@ def format_content(podcast):
     return formatted_content
 
 def set_category(podcast):
+    ## Check the type of podcast and return the proper Wordpress category as an integer
     if "Review" in podcasts_global[podcast][2]:
         return 5
-    if "Discussie" in podcasts_global[podcast][2]:
+    elif "Discussie" in podcasts_global[podcast][2]:
         return 2
+    elif "Praattafel" in podcasts_global[podcast][2]:
+        return 4
+    elif "Favorieten" in podcasts_global[podcast][2]:
+        return 9
+    elif "Interview" in podcasts_global[podcast][2]:
+        return 8
+    elif "Special" in podcasts_global[podcast][2]:
+        return 14
+    elif "Statafel" in podcasts_global[podcast][2]:
+        return 15
+    elif "Stelling" in podcasts_global[podcast][2]:
+        return 13
+    elif "Terugblik" in podcasts_global[podcast][2]:
+        return 7
+    elif "Vooruitblik" in podcasts_global[podcast][2]:
+        return 6
+    elif "Voorbeschouwing" in podcasts_global[podcast][2]:
+        return 11
+    elif "Het oeuvre van" in podcasts_global[podcast][2]:
+        return 21
     elif "Filmdomein" in podcasts_global[podcast][1]:
         return 11
-    elif "Het oeuvre van" in podcasts_global[podcast][1]:
-        return 21
     else:
         return 5
 
 def calculate_publicationdate(podcast):
     now = datetime.datetime.now()
     if now.weekday() is 2:
-        pub_date = "%s-%s-%sT%s+00:00" % (now.year, now.strftime('%m'), now.strftime('%d'), get_publicationtime(podcast))
+        pub_date = "%sT%s+00:00" % (now.strftime('%Y-%m-%d'), get_publicationtime(podcast))
         print('today is Wednesday. Publishing today')
     elif now.weekday() is 6:
-        pub_date = "%s-%s-%sT%s+00:00" % (now.year, now.strftime('%m'), now.strftime('%d'), get_publicationtime(podcast))
+        pub_date = "%sT%s+00:00" % (now.strftime('%Y-%m-%d'), get_publicationtime(podcast))
         print('today is Saturday. Publishing today')
     elif now.weekday() < 2:
         n = next_weekday(now, 2)
-        pub_date = "%s-%s-%sT%s+00:00" % (n.year, n.strftime('%m'), n.strftime('%d'), get_publicationtime(podcast))
+        pub_date = "%sT%s+00:00" % (n.strftime('%Y-%m-%d'), get_publicationtime(podcast))
         print('Today is %s. Publishing next Wednesday: %s' % (now.weekday(), n))
     elif now.weekday() > 2:
         n = next_weekday(now, 6)
-        pub_date = "%s-%s-%sT%s+00:00" % (n.year, n.strftime('%m'), n.strftime('%d'), get_publicationtime(podcast))
+        pub_date = "%sT%s+00:00" % (n.strftime('%Y-%m-%d'), get_publicationtime(podcast))
         print('Today is %s. Publishing next Saturday: %s' % (now.weekday(), n))
     podcasts_global[podcast].append(pub_date)
 
