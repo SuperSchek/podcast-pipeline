@@ -87,6 +87,7 @@ def get_credentials():
     return credentials
 
 def check_watchfolder(service):
+    # TODO: Add case for when watchfolder has no content.
     page_token = None
     while True:
         response = service.files().list(q=("'%s' in parents and trashed = false" % secrets.DRIVE_WATCHFOLDER_ID),
@@ -170,7 +171,7 @@ def download_files(service, response):
             status, done = downloader.next_chunk()
             print ("Download %d%%." % int(status.progress() * 100))
         new_name = (file.get('name')).replace(" ", "_")
-        os.rename((file.get('name12 new_name)
+        os.rename((file.get('name')), new_name)
     for podcast in podcasts_drive:
         check_extension(podcast)
 
