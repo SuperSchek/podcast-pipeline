@@ -87,24 +87,27 @@ def get_credentials():
     return credentials
 
 def check_watchfolder(service):
-    # TODO: Add case for when watchfolder has no content.
     page_token = None
     while True:
         response = service.files().list(q=("'%s' in parents and trashed = false" % secrets.DRIVE_WATCHFOLDER_ID),
                                         spaces='drive',
                                         fields='nextPageToken, files(id, name)',
                                         pageToken=page_token).execute()
-        for file in response.get('files', []):
-            ## Get list of files available for donwload
-            name = (file.get('name')).replace(" ", "_")
-            podcasts_drive.append(name)
-        page_token = response.get('nextPageToken', None)
-        if page_token is None:
-            print ("Welcome to the Python Podcast Pipeline! I found the following files in your watchfolder on Google Drive:")
-            print ('\n'.join(map(str, podcasts_drive)))
-            print ('******************************')
-            confirmation(service, response, (file.get('name')))
+        if response.get('files') == []:
+            print ('There are no podcasts in the watchfolder on Google Drive!')
             break;
+        else:
+            for file in response.get('files', []):
+                ## Get list of files available for donwload
+                name = (file.get('name')).replace(" ", "_")
+                podcasts_drive.append(name)
+            page_token = response.get('nextPageToken', None)
+            if page_token is None:
+                print ("Welcome to the Python Podcast Pipeline! I found the following files in your watchfolder on Google Drive:")
+                print ('\n'.join(map(str, podcasts_drive)))
+                print ('******************************')
+                confirmation(service, response, (file.get('name')))
+                break;
 
 def confirmation(service, response, filename):
     input_continue = raw_input("Proceed? (y/n): ")
