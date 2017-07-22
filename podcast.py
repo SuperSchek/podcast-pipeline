@@ -263,7 +263,7 @@ def calculate_publicationdate(podcast):
     if now.weekday() is 2:
         pub_date = "%sT%s+00:00" % (now.strftime('%Y-%m-%d'), get_publicationtime(podcast))
         print('today is Wednesday. Publishing today')
-    elif now.weekday() is 6:
+    elif now.weekday() is 5:
         pub_date = "%sT%s+00:00" % (now.strftime('%Y-%m-%d'), get_publicationtime(podcast))
         print('today is Saturday. Publishing today')
     elif now.weekday() < 2:
