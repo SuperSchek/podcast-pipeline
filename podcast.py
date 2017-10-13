@@ -253,7 +253,7 @@ def set_category(podcast):
         return 11
     elif "Het oeuvre van" in podcasts_global[podcast][2]:
         return 21
-    elif "Filmnieuws" in podcasts_global[podcast][1]:
+    elif "Filmnieuws" in podcasts_global[podcast][2]:
         return 22
     elif "Filmdomein" in podcasts_global[podcast][1]:
         return 11
