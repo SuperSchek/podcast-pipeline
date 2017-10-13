@@ -232,7 +232,7 @@ def set_category(podcast):
     if "Review" in podcasts_global[podcast][2]:
         return 5
     elif "Discussie" in podcasts_global[podcast][2]:
-        return 2
+        return 12
     elif "Praattafel" in podcasts_global[podcast][2]:
         return 4
     elif "Favorieten" in podcasts_global[podcast][2]:
@@ -253,6 +253,8 @@ def set_category(podcast):
         return 11
     elif "Het oeuvre van" in podcasts_global[podcast][2]:
         return 21
+    elif "Filmnieuws" in podcasts_global[podcast][1]:
+        return 22
     elif "Filmdomein" in podcasts_global[podcast][1]:
         return 11
     else:
