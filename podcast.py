@@ -273,7 +273,7 @@ def calculate_publicationdate(podcast):
         pub_date = "%sT%s+00:00" % (n.strftime('%Y-%m-%d'), get_publicationtime(podcast))
         print('Today is %s. Publishing next Wednesday: %s' % (now.weekday(), n))
     elif now.weekday() > 2:
-        n = next_weekday(now, 6)
+        n = next_weekday(now, 5)
         pub_date = "%sT%s+00:00" % (n.strftime('%Y-%m-%d'), get_publicationtime(podcast))
         print('Today is %s. Publishing next Saturday: %s' % (now.weekday(), n))
     podcasts_global[podcast].append(pub_date)
