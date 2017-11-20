@@ -255,6 +255,8 @@ def set_category(podcast):
         return 21
     elif "Filmnieuws" in podcasts_global[podcast][2]:
         return 22
+    elif "Preview" in podcasts_global[podcast][2]:
+        return 23
     elif "Filmdomein" in podcasts_global[podcast][1]:
         return 11
     else:
